@@ -10,7 +10,6 @@ class DataManager(object):
     def get_problem_data(self, problem_id):
         problem_record = self.data_access.read('problem', where={'id': problem_id})
        
-        print(problem_record)
         if problem_record:
             problem_record = problem_record[0]
             problem_data = problem.Data(problem_id=problem_record[0], name=problem_record[1], category_id=problem_record[2])
