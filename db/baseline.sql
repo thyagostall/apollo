@@ -4,14 +4,14 @@ CREATE TABLE status (
     name VARCHAR(20) NOT NULL,
 
     PRIMARY KEY(id)
-)
+);
 
 CREATE TABLE category (
     id INTEGER NOT NULL,
     name VARCHAR(20) NOT NULL,
 
     PRIMARY KEY(id)
-)
+);
 
 CREATE TABLE language (
     id INTEGER NOT NULL,
@@ -19,7 +19,7 @@ CREATE TABLE language (
     extension VARCHAR(8) NOT NULL,
 
     PRIMARY KEY(id)
-)
+);
 
 CREATE TABLE problem (
     id INTEGER NOT NULL,
@@ -28,7 +28,7 @@ CREATE TABLE problem (
 
     PRIMARY KEY(id),
     FOREIGN KEY(category_id) REFERENCES category(id)
-)
+);
 
 CREATE TABLE problem_attempt (
     problem_id INTEGER NOT NULL,
@@ -40,7 +40,7 @@ CREATE TABLE problem_attempt (
     FOREIGN KEY(problem_id) REFERENCES problem(id),
     FOREIGN KEY(language_id) REFERENCES language(id),
     FOREIGN KEY(status_id) REFERENCES status(id)
-)
+);
 
 CREATE TABLE settings (
     default_language_id INTEGER NOT NULL,
@@ -48,4 +48,4 @@ CREATE TABLE settings (
 
     FOREIGN KEY(default_language_id) REFERENCES language(id),
     FOREIGN KEY(current_problem_id) REFERENCES problem(id)
-)
+);
