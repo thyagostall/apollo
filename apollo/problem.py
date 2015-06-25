@@ -5,51 +5,57 @@ import filemanager
 import os
 
 class ProblemStatus(Enum):
-    Working, Paused, Finished, Archived = range(4)
+    Working, Paused, Finished, Archived, Temporary = range(5)
 
     @staticmethod
     def get_directory(status):
         return status.name.lower()
 
-class Data(object):
-    def __init__(self, problem_id, name, category_id=None):
+class ProblemData(object):
+    def __init__(self, problem_id, name, category=None):
         self.problem_id = problem_id
         self.name = name
-        self.category_id = category_id
+        self.category = category
+    
+        self.language = None
+        self.attempt_no = None
+        self.status = None
+       
+        self.source_file = None
+        self.input_file = None
+        self.output_file = None
 
-class Files(object):
-    def __init__(self, source_file, input_file, output_file):
-        self.source_file = source_file
-        self.input_file = input_file
-        self.output_file = output_file
+class ProblemManager(object):
+    current_problem = None
 
-class Problem(object):
-    def __init__(self, data, files, status):
-        self.data = data
-        self.files = files
-        self.status = status
+    def create_files(self, problem):
+        file_list = [problem.source_file, problem.input_file, problem.output_file]
+        base_dir = settings.get_app_dir()
 
-    def __move_files(self, src, dest):
-        app_dir = settings.get_app_dir()
+        status_dir = ProblemStatus.get_directory(problem.status)
+        base_dir = os.path.join([base_dir, status_dir])
 
-        src = os.path.join([app_dir, src])
-        dest = os.path.join([app_dir, dest])
+        filemanager.create_files(file_list, base_dir)
 
-        filemanager.move_files(self.files.values(), src, dest)
+    def create_data(self, problem):
+        pass
 
-    def set_status(self, status):
-        if status == ProblemStatus.Working:
-            set_current(self)
+    def delete_files(self, problem):
+        pass
 
-        self.__move_files(ProblemStatus.get_directory(self.status), status)
-        self.status = status
+    def delete_data(self, problem):
+        pass
 
-    def create_files(self):
-        self.status = ProblemStatus.Working
+    def set_status(self, status, problem):
+        file_list = [problem.source_file, problem.input_file, problem.output_file]
+        base_dir = settings.get_app_dir()
 
-        app_dir = settings.get_app_dir()
-        working_path = ProblemStatus.get_directory(self.status)
+        src_dir = ProblemStatus.get_directory(problem.status)
+        src_dir = os.path.join([base_dir, src_dir])
+        
+        problem.status = status
+        dest_dir = ProblemStatus.get_directory(problem.status)
+        dest_dir = os.path.join([base_dir, dest_dir])
 
-        working_path = os.path.join([app_dir, working_path])
-
-        filemanager.create_files(self.files.values(), working_path)
+        filemanager.move_files(file_list, src_dir, dest_dir)
+        db.update('problem_attempt', data={'status_id': problem.status_id}, where={'problem_id': problem.problem_id, 'attempt_no': problem.attempt_no})
