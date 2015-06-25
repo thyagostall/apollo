@@ -10,9 +10,9 @@ def create_file(filename):
     f = open(filename, 'w+')
     f.close()
 
-def create_files(files):
+def create_files(files, path):
     for file_name in files:
-        create_file(file_name)
+        create_file(os.join([path, file_name]))
 
 def delete_files(files):
     for file_name in files:
