@@ -28,7 +28,7 @@ CREATE TABLE problem_attempt (
     status_id INTEGER NOT NULL,
     attempt_no INTEGER NOT NULL,
 
-    PRIMARY KEY(problem_id, language_id, attempt_no),
+    PRIMARY KEY(problem_id, attempt_no),
     FOREIGN KEY(problem_id) REFERENCES problem(id),
     FOREIGN KEY(language_id) REFERENCES language(id)
 );
