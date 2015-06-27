@@ -49,7 +49,7 @@ class DataAccess(object):
         statement += ', '.join(['?'] * len(columns))
         statement += ')'
 
-        self.cursor.execute(statement, data.values())
+        self.cursor.execute(statement, list(data.values()))
         self.connection.commit()
     
     def update(self, table, data, where):
@@ -66,7 +66,7 @@ class DataAccess(object):
         statement += 'WHERE\n'
         statement += ' AND '.join([column + ' = ?' for column in where_columns])
         
-        params = data.values() + where.values()
+        params = list(data.values()) + list(where.values())
 
         self.cursor.execute(statement, params)
         self.connection.commit()
@@ -82,7 +82,7 @@ class DataAccess(object):
         statement += 'WHERE\n'
         statement += ' AND '.join([column + ' = ?' for column in where_columns])
 
-        params = where.values()
+        params = list(where.values())
         
         self.cursor.execute(statement, params)
         self.connection.commit()

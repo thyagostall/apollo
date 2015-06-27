@@ -43,77 +43,75 @@ class ProblemManager(object):
         self.db = db
         self.settings = settings
 
-    def get_problem_from_db(self, problem_id):
+    def __get_problem_from_db(self, problem_id):
         result = self.db.read('problem', where={'id': problem_id})
+        result = result[0]
 
         if result:
-            problem = ProblemData(result[0], problem[1], problem[2])
+            problem = ProblemData(result[0], result[1], result[2])
             return problem
         else:
             return None
 
-    def get_problem_files(self, problem_id, language, status):
-        base_dir = os.path.join(self.settings.repo_dir, Status.get_directory(status))
-
-        result = {}
-        result['source'] = os.path.join(base_dir, str(problem_id) + '.' + language_extensions[language])
-        result['input'] = os.path.join(base_dir, str(problem_id) + '.in')
-        result['output'] = os.path.join(base_dir, str(problem_id) + '.out')
-
-        return result
-
     def create_files(self, problem):
-        file_list = self.get_problem_files(problem.problem_id, problem.language, problem.status)
-        file_list = file_list.values()
+        path = os.path.join(self.settings.repo_dir, Status.get_directory(problem.status))
 
-        filemanager.create_files(file_list)
+        filemanager.create_file(problem.source_file, path)
+        filemanager.create_file(problem.input_file, path)
+        filemanager.create_file(problem.output_file, path)
 
     def create_data(self, problem):
         result = self.db.read('problem', where={'id': problem.problem_id})
         
         if not result:
-            self.db.insert('problem', data={'name': problem.name, 'category': problem.category})
+            self.db.insert('problem', data={'id': problem.problem_id, 
+                'name': problem.name})
 
-        result = self.db.read('problem_attempt', where={'id': problem.problem_id})
+        result = self.db.read('problem_attempt', where={'problem_id': problem.problem_id})
         attempt_no = len(result)
         attempt_no += 1
 
         self.db.insert('problem_attempt', 
                 data={'problem_id': problem.problem_id, 'attempt_no': attempt_no, 
-                    'language_id': problem.language, 'status_id': problem.status})
+                    'language_id': problem.language.value, 'status_id': problem.status.value})
 
     def delete_files(self, problem):
-        file_list = self.__get_problem_files(problem.problem_id, problem.language, problem.status)
+        path = os.path.join(self.settings.repo_dir, Status.get_directory(problem.status))
 
-        filemanager.delete_files(file_list)
+        filemanager.delete_file(problem.source_file, path)
+        filemanager.delete_file(problem.input_file, path)
+        filemanager.delete_file(problem.output_file, path)
 
     def delete_data(self, problem):
         self.db.delete('problem_attempt', 
-                where={'problem_id': problem.problem_id, 'attempt_no': problem.attempt_no})
+                where={'problem_id': problem.problem_id, 
+                    'attempt_no': problem.attempt_no})
 
-        result = self.db.read('problem_attempt', where={'problem_id': problem.problem_id})
+        result = self.db.read('problem_attempt', 
+                where={'problem_id': problem.problem_id})
         if not result:
-            self.db.delete('problem', where={'problem_id': problem.problem_id})
+            self.db.delete('problem', where={'id': problem.problem_id})
 
     def set_status(self, status, problem):
-        file_list = [problem.source_file, problem.input_file, problem.output_file]
-        base_dir = settings.get_app_dir()
-
         src_dir = Status.get_directory(problem.status)
-        src_dir = os.path.join([base_dir, src_dir])
-        
+        src_dir = os.path.join(self.settings.repo_dir, src_dir)
+
         problem.status = status
         dest_dir = Status.get_directory(problem.status)
-        dest_dir = os.path.join([base_dir, dest_dir])
+        dest_dir = os.path.join(self.settings.repo_dir, dest_dir)
 
-        filemanager.move_files(file_list, src_dir, dest_dir)
-        db.update(
+        filemanager.move_file(problem.source_file, src_dir, dest_dir)
+        filemanager.move_file(problem.input_file, src_dir, dest_dir)
+        filemanager.move_file(problem.output_file, src_dir, dest_dir)
+        
+        self.db.update(
                 'problem_attempt', 
-                data={'status_id': problem.status_id}, 
-                where={'problem_id': problem.problem_id, 'attempt_no': problem.attempt_no})
+                data={'status_id': problem.status.value}, 
+                where={'problem_id': problem.problem_id, 
+                    'attempt_no': problem.attempt_no})
 
     def get_data_for_new(self, problem_id, language):
-        problem = self.get_problem_from_db(problem_id)
+        problem = self.__get_problem_from_db(problem_id)
 
         if not problem:
             name = webinterface.get_problem_name(problem_id)
@@ -125,10 +123,10 @@ class ProblemManager(object):
         problem.attempt_no = len(result) + 1
         problem.status = Status.TEMPORARY
 
-        files = self.get_problem_files(problem, language, problem.status)
-        problem.source_file = files['source']
-        problem.input_file = files['input']
-        problem.output_file = files['output']
+        prefix = str(problem_id) + '.'
+        problem.source_file = prefix + language_extensions[language]
+        problem.input_file = prefix + 'in'
+        problem.output_file = prefix + 'out'
 
         return problem
 
@@ -137,8 +135,16 @@ class ProblemManager(object):
 
         result = self.db.read('problem_attempt', 
                 columns=['status_id'],
-                where={'problem_id': problem_id, 'language_id': language, 'attempt_no': attempt_no})
+                where={'problem_id': problem_id, 'language_id': language.value, 
+                    'attempt_no': attempt_no})
 
         problem.attempt_no = attempt_no
         problem.language = language
-        problem.status = Status.get_status(result[0][0])
+        problem.status = Status(result[0][0])
+        
+        prefix = str(problem_id) + '.'
+        problem.source_file = prefix + language_extensions[language]
+        problem.input_file = prefix + 'in'
+        problem.output_file = prefix + 'out'
+
+        return problem

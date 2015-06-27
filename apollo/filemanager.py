@@ -1,22 +1,19 @@
 import os
 import shutil
 
-def move_files(files, src, dest):
-    for file_name in files:
-        file_name = os.path.join(src, file_name)
-        shutil.move(file_name, os.path.join(dest, file_name))
+def move_file(filename, src, dest):
+    src = os.path.join(src, filename)
+    dest = os.path.join(dest, filename)
+    shutil.move(src, dest)
 
-def create_file(filename):
+def create_file(filename, path):
+    filename = os.path.join(path, filename)
     f = open(filename, 'w+')
     f.close()
 
-def create_files(files):
-    for file_name in files:
-        create_file(file_name)
-
-def delete_files(files):
-    for file_name in files:
-        os.remove(file_name)
+def delete_file(filename, path):
+    filename = os.path.join(path, filename)
+    os.remove(filename)
 
 def delete_directory(directory):
     os.rmdir(directory)
