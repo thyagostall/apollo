@@ -1,27 +1,87 @@
+from abc import ABCMeta
+from abc import abstractmethod
+
 import configparser
 
-class Settings(object):
-    def __init__(self, configfile, func_lang, func_problem):
-        self.configfile = configfile
-        self.get_default_language = func_lang
-        self.get_current_problem = func_problem
+
+class InvalidSettingName(Exception):
+    pass
+
+
+class TranslatorNotSet(Exception):
+    pass
+
+
+class SettingTranslator(metaclass=ABCMeta):
+    @abstractmethod
+    def fromstring(self, name, value):
+        pass
+
+
+    @abstractmethod
+    def tostring(self, name, value):
+        pass
+
+
+class Setting(object):
+    def __init__(self, filename, translator=None):
+        self.filename = filename
+        self.translator = translator
+        self.settings = {}
+
+
+    def get(self, name):
+        if name in self.settings:
+            return self.settings[name]
+        else:
+            name_id = ''.join([name, '_id'])
+            if name_id in self.settings:
+                if self.translator:
+                    self.settings[name] = self.translator.fromstring(name_id, self.settings[name_id])
+                    return self.settings[name]
+                else:
+                    raise TranslatorNotSet()
+            else:
+                raise InvalidSettingName()
+
+
+    def set(self, name, value):
+        name_id = ''.join([name, '_id'])
+        if name_id in self.settings:
+            if self.translator:
+                self.settings[name_id] = self.translator.tostring(name, self.settings[name])
+            else:
+                raise TranslatorNotSet()
+
+        self.settings[name] = value
+
 
     def load(self):
         config = configparser.ConfigParser()
-        config.read(self.configfile)
+        config.read(self.filename)
+        sets = self.settings
 
-        self.repo_dir = config['defaults']['repo_dir']
-        self.default_language = \
-                self.get_default_language(config['defaults']['language'])
-        self.current_problem = self.get_current_problem(config['current_problem']['id'],
-                config['current_problem']['attempt_no'])
-    
+        sets['db_path'] = config['global']['db_path']
+        sets['repo_path'] = config['global']['repo_path']
+
+        sets['language_id'] = config['defaults']['language_id']
+        sets['category_id'] = config['defaults']['category_id']
+
+        sets['current_problem_id'] = config['current_problem']['id_attempt']
+
+
     def save(self):
         config = configparser.ConfigParser()
-        config.read(self.configfile)
+        config.read(self.filename)
+        sets = self.settings
 
-        config['defaults']['repo_dir'] = self.repo_dir
-        config['defaults']['language'] = self.default_language.value
-        
-        config['current_problem']['problem_id'] = self.current_problem.problem_id
-        config['current_problem']['attempt_no'] = self.current_problem.attempt_no
+        config['global']['db_path'] = sets['db_path']
+        config['global']['repo_path'] = sets['repo_path']
+
+        config['defaults']['language_id'] = sets['language_id']
+        config['defaults']['category_id'] = sets['category_id']
+
+        config['current_problem']['id_attempt'] = sets['current_problem_id']
+
+        with open(self.filename, 'w') as f:
+            config.write(f)
