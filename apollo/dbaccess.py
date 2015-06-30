@@ -33,6 +33,7 @@ class DataAccess(object):
         result = [row for row in self.cursor.execute(*prepared)]
         return result
 
+
     def insert(self, table, data):
         columns = data.keys()
 
@@ -51,6 +52,8 @@ class DataAccess(object):
 
         self.cursor.execute(statement, list(data.values()))
         self.connection.commit()
+        return self.cursor.lastrowid
+
 
     def update(self, table, data, where):
         data_columns = data.keys()
@@ -70,6 +73,7 @@ class DataAccess(object):
 
         self.cursor.execute(statement, params)
         self.connection.commit()
+
 
     def delete(self, table, where=None):
         statement = 'DELETE\n'
