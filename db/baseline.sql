@@ -32,3 +32,9 @@ CREATE TABLE problem_attempt (
     FOREIGN KEY(problem_id) REFERENCES problem(id),
     FOREIGN KEY(language_id) REFERENCES language(id)
 );
+
+CREATE TABLE log (
+    action INTEGER NOT NULL,
+    problem VARCHAR(50) NOT NULL,
+    datetime CHAR(26) NOT NULL
+);

@@ -23,10 +23,10 @@ class Status(Enum):
         return status.name.lower()
 
 class ProblemData(object):
-    def __init__(self, problem_id, name, category=None):
+    def __init__(self, problem_id, name, category_id=None):
         self.problem_id = problem_id
         self.name = name
-        self.category = category
+        self.category_id = category_id
 
         self.language = None
         self.attempt_no = None
@@ -68,7 +68,7 @@ class ProblemManager(object):
 
         if not result:
             self.db.insert('problem', data={'id': problem.problem_id,
-                'name': problem.name})
+                'name': problem.name, 'category_id': problem.category_id})
 
         result = self.db.read('problem_attempt', where={'problem_id': problem.problem_id})
         attempt_no = len(result)
@@ -154,3 +154,7 @@ class ProblemManager(object):
         problem.output_file = prefix + 'out'
 
         return problem
+
+
+    def update_category(self, problem):
+        self.db.update('problem', data={'category_id': problem.category_id}, where={'id': problem.problem_id})

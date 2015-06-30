@@ -39,11 +39,11 @@ class DataAccess(object):
         statement = 'INSERT INTO\n'
         statement += table
         statement += '\n'
-        
+
         statement += '('
         statement += ', '.join(columns)
         statement += ')\n'
-        
+
         statement += 'VALUES\n'
         statement += '('
         statement += ', '.join(['?'] * len(columns))
@@ -51,7 +51,7 @@ class DataAccess(object):
 
         self.cursor.execute(statement, list(data.values()))
         self.connection.commit()
-    
+
     def update(self, table, data, where):
         data_columns = data.keys()
         where_columns = where.keys()
@@ -65,24 +65,27 @@ class DataAccess(object):
 
         statement += 'WHERE\n'
         statement += ' AND '.join([column + ' = ?' for column in where_columns])
-        
+
         params = list(data.values()) + list(where.values())
 
         self.cursor.execute(statement, params)
         self.connection.commit()
 
-    def delete(self, table, where):
-        where_columns = where.keys()
-
+    def delete(self, table, where=None):
         statement = 'DELETE\n'
         statement += 'FROM\n'
         statement += table
         statement += '\n'
 
-        statement += 'WHERE\n'
-        statement += ' AND '.join([column + ' = ?' for column in where_columns])
+        if where:
+            where_columns = where.keys()
 
-        params = list(where.values())
-        
+            statement += 'WHERE\n'
+            statement += ' AND '.join([column + ' = ?' for column in where_columns])
+
+            params = list(where.values())
+        else:
+            params = []
+
         self.cursor.execute(statement, params)
         self.connection.commit()
