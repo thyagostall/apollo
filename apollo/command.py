@@ -271,11 +271,12 @@ class CommitCommand(Command):
         lm = log.LogManager(self.database)
         logs = lm.read()
 
-        message = '\n'.join([str(log_line) for log_line in logs])
-        message = 'Items modified:\n' + message
+        # message = '\n'.join([str(log_line) for log_line in logs])
+        # message = 'Items modified:\n' + message
 
         subprocess.call(['git', 'add', '.'])
-        subprocess.call(['git', 'commit', '--amend', '-m', message])
+        # subprocess.call(['git', 'commit', '-m', '$"' + message + '"'])
+        subprocess.call(['git', 'commit'])
 
 
 class WorkCommand(Command):
