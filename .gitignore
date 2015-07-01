@@ -2,3 +2,4 @@
 *.swp
 *.db
 .DS_Store
+*.ini

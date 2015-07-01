@@ -2,6 +2,8 @@ import argparse
 import category
 import log
 import problem
+import subprocess
+import tempfile
 
 class Command(object):
     def __init__(self, settings, database):
@@ -269,8 +271,10 @@ class CommitCommand(Command):
         lm = log.LogManager(self.database)
         logs = lm.read()
 
-        for l in logs:
-            print(str(l))
+        message = '\n'.join([str(log_line) for log_line in logs])
+
+        subprocess.call(['git', 'add', '.'])
+        subprocess.call(['git', 'commit', '-m "' + message + '"'])
 
 
 class WorkCommand(Command):

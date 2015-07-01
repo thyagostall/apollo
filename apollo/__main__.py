@@ -4,6 +4,8 @@ from dbaccess import DataAccess
 from translator import Translator
 from problem import ProblemManager
 
+import os
+
 __app_data__ = {
     'name': 'Apollo',
     'version': '0.0.1',
@@ -16,12 +18,13 @@ __app_data__ = {
 
 
 def get_settings_filename():
-    return '/Users/thyago/Dropbox/Temp/test.ini'
+    return 'settings.ini'
 
 def print_init_message():
     print(__app_data__['name'])
     print('Version:', __app_data__['version'], 'in', __app_data__['release_date'])
     print('Designed for Python 3')
+    print('Current settings file:', get_settings_filename())
     print('')
     print('\'help\' to show all the commands available.')
     print('<command> --help or <command> -h to show specific help.')
