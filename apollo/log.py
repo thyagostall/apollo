@@ -18,6 +18,8 @@ class Log(object):
         else:
             self.datetime = datetime.datetime.now()
 
+    def __str__(self):
+        return ' '.join([str(self.datetime), str(self.action), 'Problem:', str(self.problem_id), self.name, 'Cat:', str(self.category_id)])
 
 class LogManager(object):
     def __init__(self, db):

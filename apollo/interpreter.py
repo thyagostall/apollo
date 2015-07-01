@@ -6,6 +6,11 @@ import command
 class Interpreter(Cmd):
     prompt = '>>> '
 
+    def __init__(self, settings, database):
+        Cmd.__init__(self)
+        self.settings = settings
+        self.database = database
+
     def do_create_category(self, args):
         self.execute(command.CreateCategoryCommand, args)
 
@@ -72,10 +77,20 @@ class Interpreter(Cmd):
     def help_commit(self):
         self.do_commit('--help')
 
+    def do_work(self, args):
+        self.execute(command.WorkCommand, args)
+
+    def help_work(self):
+        self.do_work('--help')
+
+    def do_EOF(self, args):
+        print('EOF')
+        return True
+
     def execute(self, class_name, args):
         args = shlex.split(args)
 
-        command = class_name()
+        command = class_name(self.settings, self.database)
         parser = command.parser
         parser.prog = command.name
         parser.description = command.description

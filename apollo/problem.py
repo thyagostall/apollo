@@ -36,28 +36,38 @@ class ProblemData(object):
         self.input_file = None
         self.output_file = None
 
+    def __eq__(self, other):
+        if other:
+            return self.problem_id == other.problem_id and self.attempt_no == other.attempt_no
+        else:
+            return False
+
+    def __ne__(self, other):
+        if other:
+            return other and self.problem_id != other.problem_id or self.attempt_no != other.attempt_no
+        else:
+            return True
+
 class ProblemNotFound(Exception):
     pass
 
 class ProblemManager(object):
-    current_problem = None
-
     def __init__(self, db, settings):
         self.db = db
         self.settings = settings
 
     def __get_problem_from_db(self, problem_id):
         result = self.db.read('problem', where={'id': problem_id})
-        result = result[0]
 
         if result:
+            result = result[0]
             problem = ProblemData(result[0], result[1], result[2])
             return problem
         else:
             return None
 
     def create_files(self, problem):
-        path = os.path.join(self.settings.repo_path, Status.get_directory(problem.status))
+        path = os.path.join(self.settings.get('repo_path'), Status.get_directory(problem.status))
 
         filemanager.create_file(problem.source_file, path)
         filemanager.create_file(problem.input_file, path)
@@ -79,7 +89,7 @@ class ProblemManager(object):
                     'language_id': problem.language.value, 'status_id': problem.status.value})
 
     def delete_files(self, problem):
-        path = os.path.join(self.settings.repo_path, Status.get_directory(problem.status))
+        path = os.path.join(self.settings.get('repo_path'), Status.get_directory(problem.status))
 
         filemanager.delete_file(problem.source_file, path)
         filemanager.delete_file(problem.input_file, path)
@@ -97,11 +107,11 @@ class ProblemManager(object):
 
     def set_status(self, status, problem):
         src_dir = Status.get_directory(problem.status)
-        src_dir = os.path.join(self.settings.repo_path, src_dir)
+        src_dir = os.path.join(self.settings.get('repo_path'), src_dir)
 
         problem.status = status
         dest_dir = Status.get_directory(problem.status)
-        dest_dir = os.path.join(self.settings.repo_path, dest_dir)
+        dest_dir = os.path.join(self.settings.get('repo_path'), dest_dir)
 
         filemanager.move_file(problem.source_file, src_dir, dest_dir)
         filemanager.move_file(problem.input_file, src_dir, dest_dir)
@@ -141,7 +151,7 @@ class ProblemManager(object):
                 where={'problem_id': problem_id, 'attempt_no': attempt_no})
 
         if not result:
-            message = ' '.join('Problem:', problem_id, 'was not found on the database.')
+            message = ' '.join(['Problem:', str(problem_id), 'was not found on the database.'])
             raise ProblemNotFound(message)
 
         problem.attempt_no = attempt_no
@@ -149,7 +159,7 @@ class ProblemManager(object):
         problem.language = Language(result[0][1])
 
         prefix = str(problem_id) + '.'
-        problem.source_file = prefix + language_extensions[language]
+        problem.source_file = prefix + language_extensions[problem.language]
         problem.input_file = prefix + 'in'
         problem.output_file = prefix + 'out'
 

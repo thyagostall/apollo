@@ -30,14 +30,17 @@ class Settings(object):
         self.settings = {}
 
 
-    def get(self, name):
+    def get(self, name, refresh=True):
+        if refresh:
+            self.load()
+
         if name in self.settings:
             return self.settings[name]
         else:
             name_id = ''.join([name, '_id'])
             if name_id in self.settings:
                 if self.translator:
-                    self.settings[name] = self.translator.fromstring(name_id, self.settings[name_id])
+                    self.settings[name] = self.translator.fromstring(name, self.settings[name_id])
                     return self.settings[name]
                 else:
                     raise TranslatorNotSet()
@@ -45,15 +48,18 @@ class Settings(object):
                 raise InvalidSettingName()
 
 
-    def set(self, name, value):
+    def set(self, name, value, refresh=True):
         name_id = ''.join([name, '_id'])
         if name_id in self.settings:
             if self.translator:
-                self.settings[name_id] = self.translator.tostring(name, self.settings[name])
+                self.settings[name_id] = self.translator.tostring(name, value)
             else:
                 raise TranslatorNotSet()
 
         self.settings[name] = value
+
+        if refresh:
+            self.save()
 
 
     def load(self):

@@ -6,7 +6,7 @@ class Translator(SettingTranslator):
     def __init__(self, problem_mananager):
         self.problem_mananager = problem_mananager
         self.functions = {
-            'problem': (self.get_problem, self.set_problem),
+            'current_problem': (self.get_problem, self.set_problem),
             'language': (self.get_language, self.set_language)
             }
 
@@ -23,7 +23,10 @@ class Translator(SettingTranslator):
             return problem
 
     def set_problem(self, data):
-        return '|'.join([str(data.problem_id), str(data.attempt_no)])
+        if data:
+            return '|'.join([str(data.problem_id), str(data.attempt_no)])
+        else:
+            return '0|0'
 
     def get_language(self, string):
         language = int(string)

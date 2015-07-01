@@ -25,7 +25,7 @@ class CategoryManager(object):
             raise CategoryNotFound()
 
         record = record[0]
-        result = Category(record[0], record[1])
+        result = Category(id=record[0], name=record[1])
         return result
 
 
