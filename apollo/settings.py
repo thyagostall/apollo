@@ -23,7 +23,7 @@ class SettingTranslator(metaclass=ABCMeta):
         pass
 
 
-class Setting(object):
+class Settings(object):
     def __init__(self, filename, translator=None):
         self.filename = filename
         self.translator = translator
