@@ -272,9 +272,10 @@ class CommitCommand(Command):
         logs = lm.read()
 
         message = '\n'.join([str(log_line) for log_line in logs])
+        message = 'Items modified:\n'
 
         subprocess.call(['git', 'add', '.'])
-        subprocess.call(['git', 'commit', '-m "' + message + '"'])
+        subprocess.call(['git', 'commit', '-m', message])
 
 
 class WorkCommand(Command):
