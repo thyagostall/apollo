@@ -1,0 +1,18 @@
+#!/bin/bash
+
+rm -rf ./dist/
+echo "Cleaned ./dist/"
+
+mkdir ./dist
+mkdir ./dist/bin
+echo "Created structure of distribution"
+
+cp ./exec ./dist/apollo
+chmod +x ./dist/apollo
+echo "Created main executable file"
+
+cp -R ./src/*.py ./dist/bin/
+echo "Copied python files to binary directory"
+
+zip -X -r ./dist/apollo.zip ./dist/
+echo "Created distribution file"
