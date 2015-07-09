@@ -5,6 +5,7 @@ from translator import Translator
 from problem import ProblemManager
 
 import os
+import sys
 
 __app_data__ = {
     'name': 'Apollo',
@@ -42,7 +43,11 @@ def main():
     interpreter = Interpreter(settings=settings, database=db)
 
     print_init_message()
-    interpreter.cmdloop('')
+    try:
+        interpreter.cmdloop('')
+    except KeyboardInterrupt:
+        print('')
+        sys.exit(0)
 
 if __name__ == '__main__':
     main()

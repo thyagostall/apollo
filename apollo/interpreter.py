@@ -84,6 +84,7 @@ class Interpreter(Cmd):
         self.do_work('--help')
 
     def do_EOF(self, args):
+        print('')
         print('EOF')
         return True
 
