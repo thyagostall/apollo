@@ -9,9 +9,9 @@ import sys
 
 __app_data__ = {
     'name': 'Apollo',
-    'version': '0.0.1',
-    'release_date': '2015-07-01',
-    'description': 'Small source files manager (Homeworks, contests, etc...)',
+    'version': '0.0.2',
+    'release_date': '2015-07-09',
+    'description': 'Small source files manager for UVa Online Judge',
     'author': 'Thyago Stall',
     'author_email': 'thstall@gmail.com',
     'url': 'https://github.com/thyagostall/apollo/',
