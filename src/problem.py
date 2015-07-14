@@ -2,9 +2,39 @@ from enum import Enum
 from collections import namedtuple
 
 import settings
-import filemanager
 import os
-import webinterface
+import dbaccess
+import urllib.request
+import ast
+import shutil
+
+def move_file(filename, src, dest):
+    src = os.path.join(src, filename)
+    dest = os.path.join(dest, filename)
+    shutil.move(src, dest)
+
+def create_file(filename, path):
+    filename = os.path.join(path, filename)
+    f = open(filename, 'w+')
+    f.close()
+
+def delete_file(filename, path):
+    filename = os.path.join(path, filename)
+    os.remove(filename)
+
+def delete_directory(directory):
+    os.rmdir(directory)
+
+def get_problem_name(number):
+    url = "http://uhunt.felix-halim.net/api/p/id/{0}".format(number)
+
+    with urllib.request.urlopen(url) as response:
+        result = response.read()
+        result = ast.literal_eval(result.decode('utf-8'))
+        result = result["title"]
+
+    return result
+
 
 class Language(Enum):
     C, CPP, JAVA, PYTHON = range(4)
@@ -52,12 +82,8 @@ class ProblemNotFound(Exception):
     pass
 
 class ProblemManager(object):
-    def __init__(self, db, settings):
-        self.db = db
-        self.settings = settings
-
     def __get_problem_from_db(self, problem_id):
-        result = self.db.read('problem', where={'id': problem_id})
+        result = dbaccess.read('problem', where={'id': problem_id})
 
         if result:
             result = result[0]
@@ -67,57 +93,57 @@ class ProblemManager(object):
             return None
 
     def create_files(self, problem):
-        path = os.path.join(self.settings.get('repo_path'), Status.get_directory(problem.status))
+        path = os.path.join(settings.get('repo_path'), Status.get_directory(problem.status))
 
-        filemanager.create_file(problem.source_file, path)
-        filemanager.create_file(problem.input_file, path)
-        filemanager.create_file(problem.output_file, path)
+        create_file(problem.source_file, path)
+        create_file(problem.input_file, path)
+        create_file(problem.output_file, path)
 
     def create_data(self, problem):
-        result = self.db.read('problem', where={'id': problem.problem_id})
+        result = dbaccess.read('problem', where={'id': problem.problem_id})
 
         if not result:
-            self.db.insert('problem', data={'id': problem.problem_id,
+            dbaccess.insert('problem', data={'id': problem.problem_id,
                 'name': problem.name, 'category_id': problem.category_id})
 
-        result = self.db.read('problem_attempt', where={'problem_id': problem.problem_id})
+        result = dbaccess.read('problem_attempt', where={'problem_id': problem.problem_id})
         attempt_no = len(result)
         attempt_no += 1
 
-        self.db.insert('problem_attempt',
+        dbaccess.insert('problem_attempt',
                 data={'problem_id': problem.problem_id, 'attempt_no': attempt_no,
                     'language_id': problem.language.value, 'status_id': problem.status.value})
 
     def delete_files(self, problem):
-        path = os.path.join(self.settings.get('repo_path'), Status.get_directory(problem.status))
+        path = os.path.join(settings.get('repo_path'), Status.get_directory(problem.status))
 
-        filemanager.delete_file(problem.source_file, path)
-        filemanager.delete_file(problem.input_file, path)
-        filemanager.delete_file(problem.output_file, path)
+        delete_file(problem.source_file, path)
+        delete_file(problem.input_file, path)
+        delete_file(problem.output_file, path)
 
     def delete_data(self, problem):
-        self.db.delete('problem_attempt',
+        dbaccess.delete('problem_attempt',
                 where={'problem_id': problem.problem_id,
                     'attempt_no': problem.attempt_no})
 
-        result = self.db.read('problem_attempt',
+        result = dbaccess.read('problem_attempt',
                 where={'problem_id': problem.problem_id})
         if not result:
-            self.db.delete('problem', where={'id': problem.problem_id})
+            dbaccess.delete('problem', where={'id': problem.problem_id})
 
     def set_status(self, status, problem):
         src_dir = Status.get_directory(problem.status)
-        src_dir = os.path.join(self.settings.get('repo_path'), src_dir)
+        src_dir = os.path.join(settings.get('repo_path'), src_dir)
 
         problem.status = status
         dest_dir = Status.get_directory(problem.status)
-        dest_dir = os.path.join(self.settings.get('repo_path'), dest_dir)
+        dest_dir = os.path.join(settings.get('repo_path'), dest_dir)
 
-        filemanager.move_file(problem.source_file, src_dir, dest_dir)
-        filemanager.move_file(problem.input_file, src_dir, dest_dir)
-        filemanager.move_file(problem.output_file, src_dir, dest_dir)
+        move_file(problem.source_file, src_dir, dest_dir)
+        move_file(problem.input_file, src_dir, dest_dir)
+        move_file(problem.output_file, src_dir, dest_dir)
 
-        self.db.update(
+        dbaccess.update(
                 'problem_attempt',
                 data={'status_id': problem.status.value},
                 where={'problem_id': problem.problem_id,
@@ -127,12 +153,12 @@ class ProblemManager(object):
         problem = self.__get_problem_from_db(problem_id)
 
         if not problem:
-            name = webinterface.get_problem_name(problem_id)
+            name = get_problem_name(problem_id)
             problem = ProblemData(problem_id, name, None)
 
         problem.language = language
 
-        result = self.db.read('problem_attempt', where={'problem_id': problem_id})
+        result = dbaccess.read('problem_attempt', where={'problem_id': problem_id})
         problem.attempt_no = len(result) + 1
         problem.status = Status.TEMPORARY
 
@@ -146,7 +172,7 @@ class ProblemManager(object):
     def get_data(self, problem_id, attempt_no):
         problem = self.__get_problem_from_db(problem_id)
 
-        result = self.db.read('problem_attempt',
+        result = dbaccess.read('problem_attempt',
                 columns=['status_id', 'language_id'],
                 where={'problem_id': problem_id, 'attempt_no': attempt_no})
 
@@ -167,4 +193,4 @@ class ProblemManager(object):
 
 
     def update_category(self, problem):
-        self.db.update('problem', data={'category_id': problem.category_id}, where={'id': problem.problem_id})
+        dbaccess.update('problem', data={'category_id': problem.category_id}, where={'id': problem.problem_id})

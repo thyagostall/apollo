@@ -1,95 +1,103 @@
 import sqlite3
 import os
-
-class DataAccess(object):
-    def __init__(self, dbfile):
-        self.connection = sqlite3.connect(dbfile)
-        self.cursor = self.connection.cursor()
+import settings
 
 
-    def read(self, table, columns=None, where=None, order=None):
-        statement = 'SELECT\n'
-        if columns:
-            statement += ', '.join(columns)
-        else:
-            statement += '*'
-        statement += '\n'
-
-        statement += 'FROM\n'
-        statement += table
-        statement += '\n'
-
-        if where:
-            statement += 'WHERE\n'
-            statement += ' AND '.join([col + ' = :' + col for col in where])
-            statement += '\n'
-
-        if order:
-            statement += 'ORDER BY\n'
-            statement += ', '.join([col[0] + ' ' + col[1] for col in order])
-
-        prepared = (statement, where) if where else (statement, )
-
-        result = [row for row in self.cursor.execute(*prepared)]
-        return result
+_connection = None
+_cursor = None
 
 
-    def insert(self, table, data):
-        columns = data.keys()
+def connect():
+    global _connection
+    global _cursor
 
-        statement = 'INSERT INTO\n'
-        statement += table
-        statement += '\n'
+    _connection = sqlite3.connect(settings.get('db_path'))
+    _cursor = _connection.cursor()
 
-        statement += '('
+
+def read(table, columns=None, where=None, order=None):
+    statement = 'SELECT\n'
+    if columns:
         statement += ', '.join(columns)
-        statement += ')\n'
+    else:
+        statement += '*'
+    statement += '\n'
 
-        statement += 'VALUES\n'
-        statement += '('
-        statement += ', '.join(['?'] * len(columns))
-        statement += ')'
+    statement += 'FROM\n'
+    statement += table
+    statement += '\n'
 
-        self.cursor.execute(statement, list(data.values()))
-        self.connection.commit()
-        return self.cursor.lastrowid
-
-
-    def update(self, table, data, where):
-        data_columns = data.keys()
-        where_columns = where.keys()
-
-        statement = 'UPDATE\n'
-        statement += table
+    if where:
+        statement += 'WHERE\n'
+        statement += ' AND '.join([col + ' = :' + col for col in where])
         statement += '\n'
 
-        statement += 'SET\n'
-        statement += ', '.join([column + ' = ?' for column in data_columns])
+    if order:
+        statement += 'ORDER BY\n'
+        statement += ', '.join([col[0] + ' ' + col[1] for col in order])
+
+    prepared = (statement, where) if where else (statement, )
+
+    result = [row for row in _cursor.execute(*prepared)]
+    return result
+
+
+def insert(table, data):
+    columns = data.keys()
+
+    statement = 'INSERT INTO\n'
+    statement += table
+    statement += '\n'
+
+    statement += '('
+    statement += ', '.join(columns)
+    statement += ')\n'
+
+    statement += 'VALUES\n'
+    statement += '('
+    statement += ', '.join(['?'] * len(columns))
+    statement += ')'
+
+    _cursor.execute(statement, list(data.values()))
+    _connection.commit()
+    return _cursor.lastrowid
+
+
+def update(table, data, where):
+    data_columns = data.keys()
+    where_columns = where.keys()
+
+    statement = 'UPDATE\n'
+    statement += table
+    statement += '\n'
+
+    statement += 'SET\n'
+    statement += ', '.join([column + ' = ?' for column in data_columns])
+
+    statement += 'WHERE\n'
+    statement += ' AND '.join([column + ' = ?' for column in where_columns])
+
+    params = list(data.values()) + list(where.values())
+
+    _cursor.execute(statement, params)
+    _connection.commit()
+
+
+def delete(table, where=None):
+    statement = 'DELETE\n'
+    statement += 'FROM\n'
+    statement += table
+    statement += '\n'
+
+    if where:
+        where_columns = where.keys()
 
         statement += 'WHERE\n'
         statement += ' AND '.join([column + ' = ?' for column in where_columns])
 
-        params = list(data.values()) + list(where.values())
+        params = list(where.values())
+    else:
+        params = []
 
-        self.cursor.execute(statement, params)
-        self.connection.commit()
-
-
-    def delete(self, table, where=None):
-        statement = 'DELETE\n'
-        statement += 'FROM\n'
-        statement += table
-        statement += '\n'
-
-        if where:
-            where_columns = where.keys()
-
-            statement += 'WHERE\n'
-            statement += ' AND '.join([column + ' = ?' for column in where_columns])
-
-            params = list(where.values())
-        else:
-            params = []
-
-        self.cursor.execute(statement, params)
-        self.connection.commit()
+    _cursor.execute(statement, params)
+    _connection.commit()

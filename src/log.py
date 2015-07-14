@@ -1,6 +1,8 @@
 from enum import Enum
 
 import datetime
+import dbaccess
+
 
 class Action(Enum):
     PAUSE, FINISH, ARCHIVE, WORK, CREATE, DELETE = range(6)
@@ -22,10 +24,6 @@ class Log(object):
         return ' '.join([str(self.datetime), str(self.action), 'Problem:', str(self.problem_id), self.name, 'Cat:', str(self.category_id)])
 
 class LogManager(object):
-    def __init__(self, db):
-        self.db = db
-
-
     def tolog(self, record):
         action = Action(int(record[0]))
         problem_id, name, category_id = record[1].split('|')
@@ -42,7 +40,7 @@ class LogManager(object):
         return {'action': action, 'problem': problem, 'datetime': dt}
 
     def read(self):
-        records = self.db.read('log')
+        records = dbaccess.read('log')
         result = []
 
         for record in records:
@@ -52,8 +50,8 @@ class LogManager(object):
 
 
     def insert(self, log):
-        self.db.insert('log', self.torecord(log))
+        dbaccess.insert('log', self.torecord(log))
 
 
     def dump(self):
-        self.db.delete('log')
+        dbaccess.delete('log')
