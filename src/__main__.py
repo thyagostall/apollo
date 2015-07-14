@@ -8,8 +8,8 @@ import dbaccess
 
 __app_data__ = {
     'name': 'Apollo',
-    'version': '0.0.2',
-    'release_date': '2015-07-09',
+    'version': '0.1.0',
+    'release_date': '2015-07-14',
     'description': 'Small source files manager for UVa Online Judge',
     'author': 'Thyago Stall',
     'author_email': 'thstall@gmail.com',
