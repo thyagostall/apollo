@@ -45,10 +45,9 @@ def load():
     _settings['db_path'] = config['global']['db_path']
     _settings['repo_path'] = config['global']['repo_path']
 
-    _settings['language'] = config['defaults']['language']
-    _settings['category'] = config['defaults']['category']
-
-    _settings['current_problem'] = config['current_problem']['current_problem']
+    _settings['language'] = config['default']['language']
+    _settings['category'] = config['default']['category']
+    _settings['current_problem'] = config['default']['current_problem']
 
 
 def save():
@@ -58,10 +57,9 @@ def save():
     config['global']['db_path'] = _settings['db_path']
     config['global']['repo_path'] = _settings['repo_path']
 
-    config['defaults']['language'] = _settings['language']
-    config['defaults']['category'] = _settings['category']
-
-    config['current_problem']['current_problem'] = _settings['current_problem']
+    config['default']['language'] = _settings['language']
+    config['default']['category'] = _settings['category']
+    config['default']['current_problem'] = _settings['current_problem']
 
     with open(_filename, 'w') as f:
         config.write(f)
