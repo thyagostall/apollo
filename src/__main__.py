@@ -5,6 +5,7 @@ import os
 import sys
 import settings
 import dbaccess
+import settingswizard
 
 __app_data__ = {
     'name': 'Apollo',
@@ -18,7 +19,7 @@ __app_data__ = {
 
 
 def get_settings_filename():
-    return 'settings.ini'
+    return 'settings.conf'
 
 def print_init_message():
     print(__app_data__['name'])
@@ -31,6 +32,8 @@ def print_init_message():
     print('')
 
 def main():
+    settingswizard.checkconfigfile(get_settings_filename())
+
     settings._filename = get_settings_filename()
     dbaccess.connect()
     interpreter = Interpreter()
