@@ -4,12 +4,10 @@ import log
 import problem
 import subprocess
 import tempfile
+import settings
 
 class Command(object):
-    def __init__(self, settings, database):
-        self.settings = settings
-        self.database = database
-
+    def __init__(self):
         self.fill_properties()
 
     @property
@@ -40,7 +38,7 @@ class CreateCategoryCommand(Command):
         parser.add_argument('name', type=str, help='name for the category (max 20 characters)')
 
     def execute(self, namespace):
-        category_manager = category.CategoryManager(self.database)
+        category_manager = category.CategoryManager()
         new_category = category.Category(namespace.name)
 
         category_manager.insert(new_category)
@@ -57,7 +55,7 @@ class UpdateCategoryCommand(Command):
         parser.add_argument('name', type=str, help='new name for the category (max 20 characters)')
 
     def execute(self, namespace):
-        category_manager = category.CategoryManager(self.database)
+        category_manager = category.CategoryManager()
         cat = category_manager.get(namespace.id)
         cat.name = namespace.name
         category_manager.update(cat)
@@ -73,11 +71,11 @@ class DeleteCategoryCommand(Command):
         parser.add_argument('id', type=int, help='id of the existing category')
 
     def execute(self, namespace):
-        if self.settings.get('category_id') == namespace.id:
+        if settings.get('category') == namespace.id:
             print('The category is set as default. Set another category as default before delete it.')
             return
 
-        category_manager = category.CategoryManager(self.database)
+        category_manager = category.CategoryManager()
         cat = category_manager.get(namespace.id)
         category_manager.delete(cat)
         print('Category deleted succesfully.')
@@ -92,9 +90,9 @@ class SetDefaultCategoryCommand(Command):
         parser.add_argument('id', type=int, help='id of the existing category')
 
     def execute(self, namespace):
-        category_manager = category.CategoryManager(self.database)
+        category_manager = category.CategoryManager()
         cat = category_manager.get(namespace.id)
-        self.settings.set('category_id', namespace.id)
+        settings.set('category', namespace.id)
         print('Category id set default succesfully.')
 
 
@@ -121,28 +119,28 @@ class CreateCommand(Command):
 
     def execute(self, namespace):
         problem_id = namespace.id
-        category = namespace.category if namespace.category else self.settings.get('category_id')
+        category = namespace.category if namespace.category else settings.get('category')
 
         if namespace.language:
             language = problem.Language(namespace.language)
         else:
-            language = self.settings.get('language')
+            language = settings.get('language')
 
-        manager = problem.ProblemManager(settings=self.settings, db=self.database)
+        manager = problem.ProblemManager()
 
         p = manager.get_data_for_new(problem_id, language)
         manager.create_files(p)
         manager.create_data(p)
 
-        current_problem = self.settings.get('current_problem')
+        current_problem = settings.get('current_problem')
         if current_problem:
             manager.set_status(problem.Status.PAUSED, current_problem)
 
         manager.set_status(problem.Status.WORKING, p)
-        self.settings.set('current_problem', p)
+        settings.set('current_problem', p)
 
         l = log.Log(log.Action.CREATE, p.problem_id, p.name, p.category_id)
-        lm = log.LogManager(self.database)
+        lm = log.LogManager()
         lm.insert(l)
         print(l)
 
@@ -160,17 +158,17 @@ class PauseCommand(Command):
         problem_id = namespace.id
         attempt_no = namespace.attempt
 
-        manager = problem.ProblemManager(settings=self.settings, db=self.database)
+        manager = problem.ProblemManager()
 
         p = manager.get_data(problem_id, attempt_no)
         manager.set_status(problem.Status.PAUSED, p)
 
-        current_problem = self.settings.get('current_problem')
+        current_problem = settings.get('current_problem')
         if current_problem == p:
-            current_problem = self.settings.set('current_problem', None)
+            current_problem = settings.set('current_problem', None)
 
         l = log.Log(log.Action.PAUSE, p.problem_id, p.name, p.category_id)
-        lm = log.LogManager(self.database)
+        lm = log.LogManager()
         lm.insert(l)
         print(l)
 
@@ -188,17 +186,17 @@ class FinishCommand(Command):
         problem_id = namespace.id
         attempt_no = namespace.attempt
 
-        manager = problem.ProblemManager(settings=self.settings, db=self.database)
-
-        current_problem = self.settings.get('current_problem')
-        if current_problem == p:
-            current_problem = self.settings.set('current_problem', None)
-
+        manager = problem.ProblemManager()
         p = manager.get_data(problem_id, attempt_no)
+
+        current_problem = settings.get('current_problem')
+        if current_problem == p:
+            current_problem = settings.set('current_problem', None)
+
         manager.set_status(problem.Status.FINISHED, p)
 
-        l = log.Log(log.Action.PAUSE, p.problem_id, p.name, p.category_id)
-        lm = log.LogManager(self.database)
+        l = log.Log(log.Action.FINISH, p.problem_id, p.name, p.category_id)
+        lm = log.LogManager()
         lm.insert(l)
         print(l)
 
@@ -216,17 +214,17 @@ class ArchiveCommand(Command):
         problem_id = namespace.id
         attempt_no = namespace.attempt
 
-        manager = problem.ProblemManager(settings=self.settings, db=self.database)
+        manager = problem.ProblemManager()
 
         p = manager.get_data(problem_id, attempt_no)
         manager.set_status(problem.Status.ARCHIVED, p)
 
-        current_problem = self.settings.get('current_problem')
+        current_problem = settings.get('current_problem')
         if current_problem == p:
-            current_problem = self.settings.set('current_problem', None)
+            current_problem = settings.set('current_problem', None)
 
         l = log.Log(log.Action.PAUSE, p.problem_id, p.name, p.category_id)
-        lm = log.LogManager(self.database)
+        lm = log.LogManager()
         lm.insert(l)
         print(l)
 
@@ -244,18 +242,18 @@ class DeleteCommand(Command):
         problem_id = namespace.id
         attempt_no = namespace.attempt
 
-        manager = problem.ProblemManager(settings=self.settings, db=self.database)
+        manager = problem.ProblemManager()
 
         p = manager.get_data(problem_id, attempt_no)
         manager.delete_files(p)
         manager.delete_data(p)
 
-        current_problem = self.settings.get('current_problem')
+        current_problem = settings.get('current_problem')
         if current_problem == p:
-            self.settings.set('current_problem', None)
+            settings.set('current_problem', None)
 
         l = log.Log(log.Action.DELETE, p.problem_id, p.name, p.category_id)
-        lm = log.LogManager(self.database)
+        lm = log.LogManager()
         lm.insert(l)
         print(l)
 
@@ -268,7 +266,7 @@ class CommitCommand(Command):
         parser = argparse.ArgumentParser()
 
     def execute(self, namespace):
-        lm = log.LogManager(self.database)
+        lm = log.LogManager()
         logs = lm.read()
 
         # message = '\n'.join([str(log_line) for log_line in logs])
@@ -292,19 +290,19 @@ class WorkCommand(Command):
         problem_id = namespace.id
         attempt_no = namespace.attempt
 
-        manager = problem.ProblemManager(settings=self.settings, db=self.database)
+        manager = problem.ProblemManager()
 
         p = manager.get_data(problem_id, attempt_no)
 
-        current_problem = self.settings.get('current_problem')
+        current_problem = settings.get('current_problem')
         if current_problem:
             manager.set_status(problem.Status.PAUSED, current_problem)
 
         if current_problem != p:
             manager.set_status(problem.Status.WORKING, p)
-            self.settings.set('current_problem', p)
+            settings.set('current_problem', p)
 
         l = log.Log(log.Action.WORK, p.problem_id, p.name, p.category_id)
-        lm = log.LogManager(self.database)
+        lm = log.LogManager()
         lm.insert(l)
         print(l)

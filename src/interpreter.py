@@ -6,10 +6,8 @@ import command
 class Interpreter(Cmd):
     prompt = '>>> '
 
-    def __init__(self, settings, database):
+    def __init__(self):
         Cmd.__init__(self)
-        self.settings = settings
-        self.database = database
 
     def do_create_category(self, args):
         self.execute(command.CreateCategoryCommand, args)
@@ -91,7 +89,7 @@ class Interpreter(Cmd):
     def execute(self, class_name, args):
         args = shlex.split(args)
 
-        command = class_name(self.settings, self.database)
+        command = class_name()
         parser = command.parser
         parser.prog = command.name
         parser.description = command.description

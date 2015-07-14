@@ -1,16 +1,15 @@
 from interpreter import Interpreter
-from settings import Settings
-from dbaccess import DataAccess
-from translator import Translator
 from problem import ProblemManager
 
 import os
 import sys
+import settings
+import dbaccess
 
 __app_data__ = {
     'name': 'Apollo',
-    'version': '0.0.2',
-    'release_date': '2015-07-09',
+    'version': '0.1.0',
+    'release_date': '2015-07-14',
     'description': 'Small source files manager for UVa Online Judge',
     'author': 'Thyago Stall',
     'author_email': 'thstall@gmail.com',
@@ -32,15 +31,9 @@ def print_init_message():
     print('')
 
 def main():
-    settings = Settings(get_settings_filename())
-
-    db = DataAccess(settings.get('db_path'))
-    manager = ProblemManager(settings=settings, db=db)
-    translator = Translator(manager)
-
-    settings.translator = translator
-
-    interpreter = Interpreter(settings=settings, database=db)
+    settings._filename = get_settings_filename()
+    dbaccess.connect()
+    interpreter = Interpreter()
 
     print_init_message()
     try:
