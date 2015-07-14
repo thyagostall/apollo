@@ -2,92 +2,80 @@ from abc import ABCMeta
 from abc import abstractmethod
 
 import configparser
+import problem
 
 
-class InvalidSettingName(Exception):
-    pass
+_filename = None
+_settings = {}
 
 
-class TranslatorNotSet(Exception):
-    pass
-
-
-class SettingTranslator(metaclass=ABCMeta):
-    @abstractmethod
-    def fromstring(self, name, value):
-        pass
-
-
-    @abstractmethod
-    def tostring(self, name, value):
-        pass
-
-
-class Settings(object):
-    def __init__(self, filename, translator=None):
-        self.filename = filename
-        self.translator = translator
-        self.settings = {}
-
-
-    def get(self, name, refresh=True):
-        if refresh:
-            self.load()
-
-        if name in self.settings:
-            return self.settings[name]
+def _string_to_raw(name, value):
+    if name == 'current_problem':
+        if value == '0|0':
+            return None
         else:
-            name_id = ''.join([name, '_id'])
-            if name_id in self.settings:
-                if self.translator:
-                    self.settings[name] = self.translator.fromstring(name, self.settings[name_id])
-                    return self.settings[name]
-                else:
-                    raise TranslatorNotSet()
-            else:
-                raise InvalidSettingName()
+            problem_id, attempt_no = value.split('|')
+            problem_id = int(problem_id)
+            attempt_no = int(attempt_no)
+
+            manager = problem.ProblemManager()
+            return manager.get_data(problem_id, attempt_no)
+    elif name == 'language':
+        return problem.Language(int(value))
+    else:
+        return str(value)
 
 
-    def set(self, name, value, refresh=True):
-        name_id = ''.join([name, '_id'])
-        if name_id in self.settings:
-            if self.translator:
-                self.settings[name_id] = self.translator.tostring(name, value)
-            else:
-                raise TranslatorNotSet()
-
-        self.settings[name] = value
-
-        if refresh:
-            self.save()
+def _raw_to_string(name, value):
+    if name == 'current_problem':
+        if value == None:
+            return '0|0'
+        else:
+            return '|'.join([str(value.problem_id), str(value.attempt_no)])
+    elif name == 'language':
+        return str(value.value)
+    else:
+        return str(value)
 
 
-    def load(self):
-        config = configparser.ConfigParser()
-        config.read(self.filename)
-        sets = self.settings
+def load():
+    config = configparser.ConfigParser()
+    config.read(_filename)
 
-        sets['db_path'] = config['global']['db_path']
-        sets['repo_path'] = config['global']['repo_path']
+    _settings['db_path'] = config['global']['db_path']
+    _settings['repo_path'] = config['global']['repo_path']
 
-        sets['language_id'] = config['defaults']['language_id']
-        sets['category_id'] = config['defaults']['category_id']
+    _settings['language'] = config['defaults']['language']
+    _settings['category'] = config['defaults']['category']
 
-        sets['current_problem_id'] = config['current_problem']['id_attempt']
+    _settings['current_problem'] = config['current_problem']['current_problem']
 
 
-    def save(self):
-        config = configparser.ConfigParser()
-        config.read(self.filename)
-        sets = self.settings
+def save():
+    config = configparser.ConfigParser()
+    config.read(_filename)
 
-        config['global']['db_path'] = sets['db_path']
-        config['global']['repo_path'] = sets['repo_path']
+    config['global']['db_path'] = _settings['db_path']
+    config['global']['repo_path'] = _settings['repo_path']
 
-        config['defaults']['language_id'] = sets['language_id']
-        config['defaults']['category_id'] = sets['category_id']
+    config['defaults']['language'] = _settings['language']
+    config['defaults']['category'] = _settings['category']
 
-        config['current_problem']['id_attempt'] = sets['current_problem_id']
+    config['current_problem']['current_problem'] = _settings['current_problem']
 
-        with open(self.filename, 'w') as f:
-            config.write(f)
+    with open(_filename, 'w') as f:
+        config.write(f)
+
+
+def get(name, refresh=True):
+    if refresh:
+        load()
+
+    return _string_to_raw(name, _settings[name])
+
+
+def set(name, value, refresh=True):
+    _settings[name] = _raw_to_string(name, value)
+
+    if refresh:
+        save()

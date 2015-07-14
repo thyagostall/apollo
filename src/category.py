@@ -1,3 +1,6 @@
+import dbaccess
+
+
 class CategoryNotFound(Exception):
     pass
 
@@ -9,17 +12,13 @@ class Category(object):
 
 
 class CategoryManager(object):
-    def __init__(self, db):
-        self.db = db
-
-
     def insert(self, category):
-        rowid = self.db.insert('category', data={'name': category.name})
+        rowid = dbaccess.insert('category', data={'name': category.name})
         category.category_id = rowid
 
 
     def get(self, category_id):
-        record = self.db.read('category', where={'id': category_id})
+        record = dbaccess.read('category', where={'id': category_id})
 
         if not record:
             raise CategoryNotFound()
@@ -30,8 +29,8 @@ class CategoryManager(object):
 
 
     def delete(self, category):
-        self.db.delete('category', where={'id': category.category_id})
+        dbaccess.delete('category', where={'id': category.category_id})
 
 
     def update(self, category):
-        self.db.update('category', data={'name': category.name}, where={'id': category.category_id})
+        dbaccess.update('category', data={'name': category.name}, where={'id': category.category_id})
